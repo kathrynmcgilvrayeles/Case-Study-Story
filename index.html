@@ -287,14 +287,15 @@
     let isDrawing = false;
     let canvas, ctx, wrapper, imgBase;
     let isRevealed = false;
+    let isInitialized = false;
 
     // Triggered by the "What's Next" button
     function startScratchReveal() {
+        // Ensure scratch card is initialized BEFORE sliding up
+        initScratchCard();
+
         document.getElementById('screen-2').classList.add('active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        // Initialize scratch card after slide animation completes (800ms)
-        setTimeout(initScratchCard, 800); 
         
         // Pause the audio if it's still playing
         const audioEl = document.querySelector('audio');
@@ -304,7 +305,8 @@
     }
 
     function initScratchCard() {
-        if(isRevealed) return; // Don't re-initialize if already done
+        if(isRevealed || isInitialized) return; // Don't re-initialize if already done
+        isInitialized = true;
         
         wrapper = document.getElementById('scratch-wrapper');
         canvas = document.getElementById('scratch-canvas');
@@ -432,6 +434,10 @@
            ctx.globalCompositeOperation = 'destination-out';
         }
     });
+
+    // Initialize the scratch canvas as soon as the page (and images) load, 
+    // ensuring the image is hidden before the user ever clicks "What's Next".
+    window.addEventListener('load', initScratchCard);
 </script>
 </body>
 </html>
