@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empathy Case Study Interactive</title>
+    <style>
+        :root {
+            --dark-blue: #1f2a52;
+            --cyan: #00bec7;
+            --light-cyan: #d2f0f0;
+            --grey-blue: #8fa1a6;
+            --soft-blue: #aed9d9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-cyan);
+            color: var(--dark-blue);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 900px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(31, 42, 82, 0.15);
+            border-top: 6px solid var(--cyan);
+            /* Grid setup allows overlapping screens for the slide effect */
+            display: grid;
+            grid-template-areas: "stack";
+            overflow: hidden;
+            position: relative;
+            min-height: 600px;
+        }
+
+        .screen {
+            grid-area: stack;
+            padding: 40px;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Initial state of screen 2 (hidden below) */
+        #screen-2 {
+            transform: translateY(100%);
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        /* Active state for screen 2 (slides up) */
+        #screen-2.active {
+            transform: translateY(0);
+        }
+
+        h1 {
+            color: var(--dark-blue);
+            margin-top: 0;
+            font-size: 2.2em;
+            line-height: 1.2;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            color: var(--dark-blue);
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .header-section {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 2px solid var(--light-cyan);
+        }
+
+        .header-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (min-width: 768px) {
+            .header-section {
+                flex-direction: row;
+            }
+        }
+
+        .header-right img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .media-placeholder {
+            background-color: #f4f6f8;
+            border: 2px dashed var(--grey-blue);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: var(--grey-blue);
+            font-weight: bold;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .scratch-container {
+            position: relative;
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto 30px auto;
+            user-select: none;
+        }
+
+        .scratch-container img {
+            width: 100%;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #scratch-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            border-radius: 8px;
+            touch-action: none; /* Prevent scrolling while scratching */
+            transition: opacity 0.8s ease;
+        }
+
+        #scratch-message {
+            display: none;
+            text-align: center;
+            background-color: var(--light-cyan);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: var(--dark-blue);
+            font-size: 1.15em;
+            animation: fadeIn 1s ease-in-out;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        button {
+            background-color: var(--cyan);
+            color: #ffffff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: var(--dark-blue);
+            transform: translateY(-2px);
+        }
+
+        .btn-center {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .screen { padding: 25px 20px; }
+            h1 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="main-container">
+    
+    <!-- Screen 1: Story, Audio, and First Image -->
+    <div id="screen-1" class="screen">
+        
+        <div class="header-section">
+            <div class="header-left">
+                <h1>Building Empathy: The Story Begins</h1>
+                <p>It all starts with a story. Start the audio below, listen carefully, and use your imagination to picture the scene.</p>
+                
+                <div class="media-placeholder">
+                    <p style="margin-top:0; font-size:0.9em; margin-bottom: 10px; font-weight: normal;">[Case Study Story Audio]</p>
+                    <audio controls>
+                        <!-- Replace with your GitHub raw audio link to Case Study Story.mp3 -->
+                        <source src="Case_Study_Story.mp3" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            </div>
+
+            <div class="header-right">
+            <!-- Replace src with your GitHub image link -->
+            <img src="https://placehold.co/600x450/1f2a52/ffffff?text=Replace+with+Man+and+child" 
+                 alt="Placeholder for Man and child">
+        </div>
+    </div>
+
+    <div style="text-align: center; max-width: 600px; margin: 0 auto; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+        <p>Listen closely to the audio. At the end of the story, select the button below.</p>
+        
+        <div class="btn-center">
+            <button onclick="startScratchReveal()" style="background-color: var(--dark-blue);">What's Next</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Screen 2: Scratch to Reveal (Slides over Screen 1) -->
+    <div id="screen-2" class="screen">
+        <div style="text-align: center;">
+            <h2>What happened?</h2>
+            <p>Use your finger or mouse to reveal the real reality of the man and the room.</p>
+        </div>
+        
+        <div class="scratch-container" id="scratch-wrapper">
+            <!-- Replace src with your GitHub raw link for Beach scene.png -->
+            <img src="https://placehold.co/800x500/00bec7/ffffff?text=Replace+with+Beach+scene" 
+                 alt="Placeholder for Beach scene"
+                 id="img-beach" crossorigin="anonymous">
+            <canvas id="scratch-canvas"></canvas>
+        </div>
+
+        <div id="scratch-message">
+            <p style="margin:0;">Sometimes the reality of a situation is sudden and unexpected. Empathy requires us to understand how sudden changes impact the people we interact with.</p>
+        </div>
+
+        <div class="btn-center" id="reveal-nav" style="display: none;">
+            <button onclick="location.reload()">Restart Experience</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let isDrawing = false;
+    let canvas, ctx, wrapper, imgBase;
+    let isRevealed = false;
+
+    // Triggered by the "What's Next" button
+    function startScratchReveal() {
+        document.getElementById('screen-2').classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Initialize scratch card after slide animation completes (800ms)
+        setTimeout(initScratchCard, 800); 
+        
+        // Pause the audio if it's still playing
+        const audioEl = document.querySelector('audio');
+        if (audioEl) {
+            audioEl.pause();
+        }
+    }
+
+    function initScratchCard() {
+        if(isRevealed) return; // Don't re-initialize if already done
+        
+        wrapper = document.getElementById('scratch-wrapper');
+        canvas = document.getElementById('scratch-canvas');
+        imgBase = document.getElementById('img-beach');
+        ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        // Set canvas to match image dimensions precisely
+        canvas.width = imgBase.clientWidth;
+        canvas.height = imgBase.clientHeight;
+
+        // Fill canvas with a "door" color
+        ctx.fillStyle = '#1f2a52'; // Brand dark blue
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add text instructions on the canvas
+        ctx.font = "bold 24px 'Segoe UI', sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Scratch to Open", canvas.width / 2, canvas.height / 2);
+
+        // Crucial for scratching effect - makes drawings transparent
+        ctx.globalCompositeOperation = 'destination-out';
+
+        // Mouse Events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', scratch);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        // Touch Events for Mobile
+        canvas.addEventListener('touchstart', startDrawing, {passive: false});
+        canvas.addEventListener('touchmove', scratch, {passive: false});
+        canvas.addEventListener('touchend', stopDrawing);
+    }
+
+    function getCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        
+        // Calculate scale in case the canvas is resized via CSS
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function startDrawing(e) {
+        if(isRevealed) return;
+        isDrawing = true;
+        if(e.type.includes('touch')) e.preventDefault(); // Stop scrolling on mobile
+        const pos = getCoordinates(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
+    function scratch(e) {
+        if (!isDrawing || isRevealed) return;
+        if(e.type.includes('touch')) e.preventDefault();
+        
+        const pos = getCoordinates(e);
+        
+        ctx.lineTo(pos.x, pos.y);
+        ctx.lineWidth = 50; // Brush size
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        checkRevealPercentage();
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+    }
+
+    // Check how much of the canvas has been cleared
+    function checkRevealPercentage() {
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let transparentCount = 0;
+        const totalPixels = pixels.length / 4;
+
+        // Check alpha channel (every 4th value)
+        for (let i = 3; i < pixels.length; i += 4) {
+            if (pixels[i] === 0) {
+                transparentCount++;
+            }
+        }
+
+        const percentage = (transparentCount / totalPixels) * 100;
+
+        // If 40% cleared, reveal the whole thing automatically
+        if (percentage > 40 && !isRevealed) {
+            isRevealed = true;
+            canvas.style.opacity = '0'; // Trigger CSS fade out
+            
+            setTimeout(() => {
+                canvas.style.display = 'none';
+                document.getElementById('scratch-message').style.display = 'block';
+                document.getElementById('reveal-nav').style.display = 'flex';
+            }, 800); // Wait for CSS fade out transition
+        }
+    }
+
+    // Re-adjust canvas if window is resized before revealing
+    window.addEventListener('resize', () => {
+        if(!isRevealed && canvas && imgBase) {
+           canvas.width = imgBase.clientWidth;
+           canvas.height = imgBase.clientHeight;
+           // Redraw the cover
+           ctx.globalCompositeOperation = 'source-over';
+           ctx.fillStyle = '#1f2a52';
+           ctx.fillRect(0, 0, canvas.width, canvas.height);
+           ctx.globalCompositeOperation = 'destination-out';
+           
+           ctx.globalCompositeOperation = 'source-over';
+           ctx.font = "bold 24px 'Segoe UI', sans-serif";
+           ctx.fillStyle = "#ffffff";
+           ctx.textAlign = "center";
+           ctx.textBaseline = "middle";
+           ctx.fillText("Scratch to Open", canvas.width / 2, canvas.height / 2);
+           ctx.globalCompositeOperation = 'destination-out';
+        }
+    });
+</script>
+</body>
+</html>
